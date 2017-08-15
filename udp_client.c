@@ -32,6 +32,7 @@ int main(int argc,char* argv[])
         close(sockfd);
         exit(1);
     }
+    //1.向服务器发起连接，观察服务器端本机的公网IP和port
     n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
     if (n < 0)
     {
@@ -51,18 +52,13 @@ int main(int argc,char* argv[])
     scanf("%s",target_ip);   
     printf("input the port:\n");
     scanf("%d",&target_port);
-
+    //2.输入目标IP和端口，去连接另一个客户端的NAT
     addr.sin_family = AF_INET;
     addr.sin_port = htons(target_port);
     addr.sin_addr.s_addr = inet_addr(target_ip);
     printf("target:%s:%d\n",target_ip,target_port);
     while(1){
-	scanf("%s",buff);
-        n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
-        n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
-        n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
-        n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
-        n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
+	    scanf("%s",buff);
         n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
         printf("sent %d\n",n);
         n = recvfrom(sockfd, buff, 100, 0, (struct sockaddr *)&addr, &len);

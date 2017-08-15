@@ -33,6 +33,7 @@ int main(int argc,char* argv[])
         perror("bind");
         exit(1);
     }
+    //谁连接我，我就打印它的IP和端口，并向其发送 this is server
     while(1){
         n = recvfrom(sockfd, buff, 100, 0, (struct sockaddr *)&clientAddr, &len);
         printf("recv %d bytes from %s:%u\n",n,inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
