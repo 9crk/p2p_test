@@ -10,13 +10,14 @@
 
 //这个线程的目的：保存N个ID-IP:port对应表-----------------------------------------------
 #define UDP_PORT    3333
-#define MAX_UDP_LIST    1000
+#define MAX_CONN    1000
 typedef struct id_ip_info{
     int id;
+    int socket;
     char ip[20];
     int port;
 }id_ip_info;
-id_ip_info udplist[MAX_UDP_LIST];
+id_ip_info clientlist[MAX_CONN];
 void udp_server()
 {
     int i,n,ihandle,len,sockfd;
@@ -28,7 +29,7 @@ void udp_server()
         return;
     }
     len = sizeof(addr);
-    memset(udplist,0,sizeof(id_ip_info)*MAX_UDP_LIST);
+    memset(clientlist,0,sizeof(id_ip_info)*MAX_CONN);
     addr.sin_family = AF_INET;
     addr.sin_port = htons(UDP_PORT);
     addr.sin_addr.s_addr = htonl(INADDR_ANY);    
@@ -41,19 +42,19 @@ void udp_server()
         n = recvfrom(sockfd, buff, 100, 0, (struct sockaddr *)&clientAddr, &len);
         sscanf(buff,"<handle>%d</handle>",&ihandle);
         if(ihandle==0)continue;
-        for(i=0;i<MAX_UDP_LIST;i++)if(udplist[i].id == 0){
-            udplist[i].id = ihandle;
-            sprintf(udplist[i].ip,"%s",inet_ntoa(clientAddr.sin_addr));
-            udplist[i].port = ntohs(clientAddr.sin_port);
+        for(i=0;i<MAX_CONN;i++)if(clientlist[i].id == 0){
+            clientlist[i].id = ihandle;
+            sprintf(clientlist[i].ip,"%s",inet_ntoa(clientAddr.sin_addr));
+            clientlist[i].port = ntohs(clientAddr.sin_port);
             break;
         }
-        if(i==MAX_UDP_LIST/2){
-            memcpy(&udplist,&udplist[MAX_UDP_LIST/2],sizeof(id_ip_info)*MAX_UDP_LIST/2);
-            memset(&udplist[MAX_UDP_LIST/2],0,sizeof(id_ip_info)*MAX_UDP_LIST/2);
+        if(i==MAX_CONN/2){
+            memcpy(&clientlist,&clientlist[MAX_CONN/2],sizeof(id_ip_info)*MAX_CONN/2);
+            memset(&clientlist[MAX_CONN/2],0,sizeof(id_ip_info)*MAX_CONN/2);
         }
-        for(i=0;i<MAX_UDP_LIST;i++){
-            if(udplist[i].id != 0){
-                printf("<%d,%s:%d>\n",udplist[i].id,udplist[i].ip,udplist[i].port);
+        for(i=0;i<MAX_CONN;i++){
+            if(clientlist[i].id != 0){
+                printf("<%d,%s:%d>\n",clientlist[i].id,clientlist[i].ip,clientlist[i].port);
             }
         }
     }
@@ -63,7 +64,7 @@ void udp_server()
 #define TCP_PORT    3333
 void tcp_server()
 {
-    int ret,flag = 1,len,recvSize;
+    int i,ret,flag = 1,len,recvSize,ihandle;
     int socket_fd,conn_fd;
     char buff[100];
     fd_set rSet;
@@ -88,7 +89,7 @@ void tcp_server()
         close(socket_fd);
         return;
     }
-    ret = listen(socket_fd, 20);
+    ret = listen(socket_fd, 10);
     if(ret < 0){
         printf("listen sock err!\n");
         close(socket_fd);
@@ -97,8 +98,37 @@ void tcp_server()
     len = sizeof(clientAddr);    
     while(1){
         //accept返回客户端套接字描述符    
-        conn_fd = accept(socket_fd,(struct sockaddr *)&clientAddr,&len);  //注，此处为了获取返回值使用 指针做参数    
-        
+        conn_fd = accept(socket_fd,(struct sockaddr *)&clientAddr,&len);  //注，此处为了获取返回值使用 指针做参数 
+        if(conn_fd > 0){
+            recv(conn_fd, buff, 100, 0);
+            sscanf(buff,"<handle>%d</handle>",&ihandle);
+            if(ihandle != 0){
+                for(i=0;i<MAX_CONN;i++){
+                    if(ihandle ==clientlist[i].id){
+                        break;
+                    }
+                }
+                if(i==MAX_CONN){//not exist
+                    for(i=0;i<MAX_CONN;i++){
+                        if(clientlist[i].id == 0){
+                            clientlist[i].id = ihandle;
+                            clientlist[i].socket = conn_fd;
+                            sprintf(clientlist[i].ip,"%s",inet_ntoa(clientAddr.sin_addr));
+                            clientlist[i].port = ntohs(clientAddr.sin_port);
+                            break;
+                        }
+                    }
+                }else{//exist
+                    sprintf(buff,"%s:%d",clientlist[i].ip,clientlist[i].port);
+                    send(conn_fd,buff,strlen(buff),0);
+                    sprintf(buff,"%s:%d",inet_ntoa(clientAddr.sin_addr),ntohs(clientAddr.sin_port));
+                    send(clientlist[i].socket,buff,strlen(buff),0);   
+                    close(conn_fd);
+                    close(clientlist[i].socket);
+                    memset(&clientlist[i],0,sizeof(id_socket_info));
+                }
+            }
+        } 
     }
 }
 
