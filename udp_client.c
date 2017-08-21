@@ -76,13 +76,13 @@ int main(int argc,char* argv[])
     char target_ip[20];
     int target_port;
     struct sockaddr_in addr;
+    memset(target_ip,0,20);
     sockfd = reg(argv[1],atoi(argv[2]),atoi(argv[3]),target_ip,&target_port);
     //2.输入目标IP和端口，去连接另一个客户端的NAT
     addr.sin_family = AF_INET;
     addr.sin_port = htons(target_port);
     addr.sin_addr.s_addr = inet_addr(target_ip);
     len = sizeof(addr);
-    memset(target_ip,0,20);
     printf("target:%s:%d\n",target_ip,target_port);
     while(1){
         scanf("%s",buff);
