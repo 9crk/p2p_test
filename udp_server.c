@@ -132,7 +132,7 @@ int create_skt()
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if(socket_fd < 0){
         printf("socket err!\n");
-        return;
+        return -1;
     }
     severAddr.sin_family = AF_INET;
     severAddr.sin_port = htons(TCP_PORT);
@@ -145,13 +145,13 @@ int create_skt()
     if(ret < 0){
         printf("bind sock err!\n");
         close(socket_fd);
-        return;
+        return -1;
     }
     ret = listen(socket_fd, 10);
     if(ret < 0){
         printf("listen sock err!\n");
         close(socket_fd);
-        return;
+        return -1;
     }
    memset(&waitList,0,sizeof(conn_ip_info)*MAX_CONN);
    return socket_fd;
