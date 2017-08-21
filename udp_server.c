@@ -54,9 +54,9 @@ static int updateConn(char* ip,int port,int handle)
             debug();
         }else{
             clientlist[i].port2 = port;
-            sprintf(buff,"<ip>%s</ip><port>%d</port>",clientlist[i].ip2,clientlist[i].port2);
+            sprintf(buff,"%s:%d",clientlist[i].ip2,clientlist[i].port2);
             send(clientlist[i].skt1,buff,strlen(buff),0);
-            sprintf(buff,"<ip>%s</ip><port>%d</port>",clientlist[i].ip1,clientlist[i].port1);
+            sprintf(buff,"%s:%d",clientlist[i].ip1,clientlist[i].port1);
             send(clientlist[i].skt2,buff,strlen(buff),0);
             close(clientlist[i].skt1);
             close(clientlist[i].skt2);
