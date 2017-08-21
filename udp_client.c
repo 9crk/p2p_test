@@ -65,14 +65,13 @@ int reg(char*ip,int port,int uuid,char*targetIp,int*targetPort)
         close(socket_fd);
         return -1;
     }
-    char tmp[20];
-    sscanf(buff,"%[^:]:%s",targetIp,tmp);
-    targetPort = atoi(&buff[strlen(targetIp) + 1]);
+    sscanf(buff,"%[^:]:%d",targetIp,&(*targetPort));
     close(socket_fd);
     return udp_socket;
 }
 int main(int argc,char* argv[])
 {
+    int snd;
     int len,n,sockfd = 0;    
     char buff[100];
     char target_ip[20];
@@ -80,6 +79,7 @@ int main(int argc,char* argv[])
     struct sockaddr_in addr;
     memset(target_ip,0,20);
     sockfd = reg(argv[1],atoi(argv[2]),atoi(argv[3]),target_ip,&target_port);
+    snd = atoi(argv[4]);
     //2.输入目标IP和端口，去连接另一个客户端的NAT
     addr.sin_family = AF_INET;
     addr.sin_port = htons(target_port);
@@ -87,11 +87,14 @@ int main(int argc,char* argv[])
     len = sizeof(addr);
     printf("target:%s:%d\n",target_ip,target_port);
     while(1){
-        scanf("%s",buff);
-        n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
-        printf("sent %d\n",n);
-        n = recvfrom(sockfd, buff, 100, 0, (struct sockaddr *)&addr, &len);
-        printf("recv %d\n",n);
+        if(snd){
+            scanf("%s",buff);
+            n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
+            printf("send:%s\n",buff);
+        }else{
+            n = recvfrom(sockfd, buff, 100, 0, (struct sockaddr *)&addr, &len);
+            printf("recv:%s\n",buff);
+        }
     }
     close(sockfd);
 }
