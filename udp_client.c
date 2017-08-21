@@ -115,7 +115,7 @@ int main(int argc,char* argv[])
     while(1){
         scanf("%s",buff);
         n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
-        printf(">>>>>>>>>>>:%s\n",buff);
+        printf(">>>>>>>>>>>>>:%s\n",buff);
     }
     close(sockfd);
 }
