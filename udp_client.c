@@ -67,34 +67,54 @@ int reg(char*ip,int port,int uuid,char*targetIp,int*targetPort)
     }
     sscanf(buff,"%[^:]:%d",targetIp,&(*targetPort));
     close(socket_fd);
+
+    //发一点东西,建立连接
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(*targetPort);
+    addr.sin_addr.s_addr = inet_addr(targetIp);
+    len = sizeof(addr);
+    for(i=0;i<10;i++){
+        sendto(udp_socket, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", 26, 0, (struct sockaddr *)&addr, sizeof(addr));
+    }    
     return udp_socket;
+}
+void recv_thread(void*arg)
+{
+    char buff[1000];
+    struct sockaddr_in addr;
+    int len,n;
+    int sockfd = *(int*)arg;
+    len = sizeof(addr);
+    while(1){
+        n = recvfrom(sockfd, buff, 100, 0, (struct sockaddr *)&addr, &len);
+        printf("recv:%s\n",buff);
+    }
 }
 int main(int argc,char* argv[])
 {
-    int snd;
     int len,n,sockfd = 0;    
     char buff[100];
+
     char target_ip[20];
     int target_port;
     struct sockaddr_in addr;
+    
     memset(target_ip,0,20);
     sockfd = reg(argv[1],atoi(argv[2]),atoi(argv[3]),target_ip,&target_port);
-    snd = atoi(argv[4]);
+    
     //2.输入目标IP和端口，去连接另一个客户端的NAT
     addr.sin_family = AF_INET;
     addr.sin_port = htons(target_port);
     addr.sin_addr.s_addr = inet_addr(target_ip);
     len = sizeof(addr);
     printf("target:%s:%d\n",target_ip,target_port);
+
+    pthread_t pid;
+    pthread_create(&pid,NULL,recv_thread,&sockfd);
     while(1){
-        if(snd){
-            scanf("%s",buff);
-            n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
-            printf("send:%s\n",buff);
-        }else{
-            n = recvfrom(sockfd, buff, 100, 0, (struct sockaddr *)&addr, &len);
-            printf("recv:%s\n",buff);
-        }
+        scanf("%s",buff);
+        n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
+        printf("send:%s\n",buff);
     }
     close(sockfd);
 }
