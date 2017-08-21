@@ -32,6 +32,15 @@ typedef struct id_ip_info{
     int skt2;
 }id_ip_info;
 id_ip_info clientlist[MAX_CONN];
+void debug()
+{
+    int i;
+    for(i=0;i<MAX_CONN;i++){
+        if(clientlist[i].id != 0){
+            printf("--------\n%d-%s:%d-%s:%d\n",clientlist[i].id,clientlist[i].ip1,clientlist[i].port1,clientlist[i].ip2,clientlist[i].port2);
+        }
+    }
+}
 static int updateConn(char* ip,int port,int handle)
 {
     int i;
@@ -42,6 +51,7 @@ static int updateConn(char* ip,int port,int handle)
     if(i != MAX_CONN){//already exist
         if(strcmp(clientlist[i].ip1,"ip") == 0){
             clientlist[i].port1 = port;
+            debug();
         }else{
             clientlist[i].port2 = port;
             sprintf(buff,"<ip>%s</ip><port>%d</port>",clientlist[i].ip2,clientlist[i].port2);
@@ -50,7 +60,9 @@ static int updateConn(char* ip,int port,int handle)
             send(clientlist[i].skt2,buff,strlen(buff),0);
             close(clientlist[i].skt1);
             close(clientlist[i].skt2);
+            debug();
             memset(&clientlist[i],0,sizeof(id_ip_info));
+            printf("close one\n");
         }
     }
     return -1;
@@ -64,6 +76,7 @@ static int createOrUpdateConn(char* ip,int handle,int socket)
     if(i!= MAX_CONN){
         strcpy(clientlist[i].ip2,ip);
         clientlist[i].skt2 = socket;
+        debug();
         return 0;
     }
     for(i=0;i<MAX_CONN;i++){
@@ -73,17 +86,10 @@ static int createOrUpdateConn(char* ip,int handle,int socket)
     clientlist[i].id = handle;
     strcpy(clientlist[i].ip1,ip);
     clientlist[i].skt1 = socket;
+    debug();
     return 0;
 }
-void debug()
-{
-    int i;
-    for(i=0;i<MAX_CONN;i++){
-        if(clientlist[i].id != 0){
-            printf("--------\n%d-%s:%d-%s:%d\n",clientlist[i].id,clientlist[i].ip1,clientlist[i].port1,clientlist[i].ip2,clientlist[i].port2);
-        }
-    }
-}
+
 
 void udp_server()
 {
@@ -99,18 +105,19 @@ void udp_server()
     memset(clientlist,0,sizeof(id_ip_info)*MAX_CONN);
     addr.sin_family = AF_INET;
     addr.sin_port = htons(UDP_PORT);
-    addr.sin_addr.s_addr = htonl(INADDR_ANY); 
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
     if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0){
         perror("bind");
         exit(1);
     }
+    printf("udp server ok\n");
     while(1){
         ihandle = 0;
         n = recvfrom(sockfd, buff, 100, 0, (struct sockaddr *)&clientAddr, &len);
         sscanf(buff,"<handle>%d</handle>",&ihandle);
+        printf("port=%d recv:%s\n",ntohs(clientAddr.sin_port),buff);
         if(ihandle==0)continue;
         updateConn(inet_ntoa(clientAddr.sin_addr),ntohs(clientAddr.sin_port),ihandle);
-        debug();
     }
     close(sockfd);
 }
@@ -205,7 +212,6 @@ void tcp_server()
                         if(recvSize>0){
                             sscanf(buff,"<handle>%d</handle>",&ihandle);
                             createOrUpdateConn(waitList[i].ip,ihandle,waitList[i].conn_fd);
-                            debug();
                         }
                     }
                 }

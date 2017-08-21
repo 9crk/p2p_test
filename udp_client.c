@@ -32,7 +32,7 @@ int reg(char*ip,int port,int uuid,char*targetIp,int*targetPort)
             close(socket_fd);
             return -1;
     }
-
+    sleep(1);
     udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
     if(-1 == udp_socket){
         perror("socket");
