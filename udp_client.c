@@ -65,7 +65,7 @@ int reg(char*ip,int port,int uuid,char*targetIp,int*targetPort)
         close(socket_fd);
         return -1;
     }
-    sscanf(buff,"<ip>%s</ip><port>%d</port>",targetIp,targetPort);
+    sscanf(buff,"<ip>%s</ip><port>%d</port>",targetIp,&targetPort);
     close(socket_fd);
     return udp_socket;
 }
