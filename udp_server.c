@@ -72,7 +72,7 @@ static int createOrUpdateConn(char* ip,int handle,int socket)
     int i;
     for(i=0;i<MAX_CONN;i++){
         if(clientlist[i].id == handle)break;
-    }
+    }    
     if(i!= MAX_CONN){
         strcpy(clientlist[i].ip2,ip);
         clientlist[i].skt2 = socket;
@@ -110,12 +110,10 @@ void udp_server()
         perror("bind");
         exit(1);
     }
-    printf("udp server ok\n");
     while(1){
         ihandle = 0;
         n = recvfrom(sockfd, buff, 100, 0, (struct sockaddr *)&clientAddr, &len);
         sscanf(buff,"<handle>%d</handle>",&ihandle);
-        printf("port=%d recv:%s\n",ntohs(clientAddr.sin_port),buff);
         if(ihandle==0)continue;
         updateConn(inet_ntoa(clientAddr.sin_addr),ntohs(clientAddr.sin_port),ihandle);
     }
@@ -173,10 +171,12 @@ void accept_server(void*skt)
     while(1){
         conn_fd = accept(socket_fd,(struct sockaddr *)&clientAddr,&len);  //注，此处为了获取返回值使用 指针做参数 
         if(conn_fd > 0){
-            for(i=0;i<MAX_CONN;i++)if(waitList[i].conn_fd == 0){
-                waitList[i].conn_fd = conn_fd;
-                strcpy(waitList[i].ip,inet_ntoa(clientAddr.sin_addr));
-                break;
+            for(i=0;i<MAX_CONN;i++){
+                if(waitList[i].conn_fd == 0){
+                    waitList[i].conn_fd = conn_fd;
+                    strcpy(waitList[i].ip,inet_ntoa(clientAddr.sin_addr));
+                    break;
+                }
             }
         }
     }
@@ -208,7 +208,6 @@ void tcp_server()
                 if(waitList[i].conn_fd != 0){
                     if(FD_ISSET(waitList[i].conn_fd,&set)){
                         recvSize = recv(waitList[i].conn_fd, buff, 100, 0);
-                        printf("recv = %d\n",recvSize);
                         if(recvSize>0){
                             sscanf(buff,"<handle>%d</handle>",&ihandle);
                             createOrUpdateConn(waitList[i].ip,ihandle,waitList[i].conn_fd);
