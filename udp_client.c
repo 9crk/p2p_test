@@ -86,8 +86,9 @@ void recv_thread(void*arg)
     int sockfd = *(int*)arg;
     len = sizeof(addr);
     while(1){
+        memset(buff,0,1000);
         n = recvfrom(sockfd, buff, 100, 0, (struct sockaddr *)&addr, &len);
-        printf("recv:%s\n",buff);
+        printf("<<<<<<<<<<<<<:%s\n",buff);
     }
 }
 int main(int argc,char* argv[])
@@ -114,7 +115,7 @@ int main(int argc,char* argv[])
     while(1){
         scanf("%s",buff);
         n = sendto(sockfd, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
-        printf("send:%s\n",buff);
+        printf(">>>>>>>>>>>:%s\n",buff);
     }
     close(sockfd);
 }
