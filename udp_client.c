@@ -58,14 +58,14 @@ int reg(char*ip,int port,int uuid,char*targetIp,int*targetPort)
     }
 
 
-
+    memset(buff,0,100);
     ret = recv(socket_fd,buff,100,0);
     if(ret < 0){
         printf("recv err\n");
         close(socket_fd);
         return -1;
     }
-    sscanf(buff,"%s:%d",targetIp,&targetPort);
+    sscanf(buff,"%[^:]:%d",targetIp,&targetPort);
     close(socket_fd);
     return udp_socket;
 }
