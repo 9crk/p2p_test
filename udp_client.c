@@ -65,7 +65,6 @@ int reg(char*ip,int port,int uuid,char*targetIp,int*targetPort)
         close(socket_fd);
         return -1;
     }
-    sprintf(targetIp,"");
     sscanf(buff,"<ip>%s</ip><port>%d</port>",targetIp,targetPort);
     close(socket_fd);
     return udp_socket;
@@ -83,6 +82,7 @@ int main(int argc,char* argv[])
     addr.sin_port = htons(target_port);
     addr.sin_addr.s_addr = inet_addr(target_ip);
     len = sizeof(addr);
+    memset(target_ip,0,20);
     printf("target:%s:%d\n",target_ip,target_port);
     while(1){
         scanf("%s",buff);
