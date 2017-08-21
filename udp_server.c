@@ -49,7 +49,7 @@ static int updateConn(char* ip,int port,int handle)
         if(clientlist[i].id == handle)break;
     }
     if(i != MAX_CONN){//already exist
-        if(strcmp(clientlist[i].ip1,"ip") == 0){
+        if(strcmp(clientlist[i].ip1,ip) == 0){
             clientlist[i].port1 = port;
             debug();
         }else{
