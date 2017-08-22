@@ -14,6 +14,10 @@ TCP
 2.recv data ->get ID
 3.recv UDP ->get-IP_Port ->remember
                                                ->send to each other ->close both
+
+BUG记录
+20170822    如果设备A两次connect服务器，会造成被自己断线
+            
 */
 
 
@@ -21,6 +25,7 @@ TCP
 //这个线程的目的：保存N个ID-IP:port对应表-----------------------------------------------
 #define UDP_PORT    3333
 #define MAX_CONN    1000
+pthread_mutex_t mutex;
 typedef struct id_ip_info{
     int id;
     int socket;
@@ -32,18 +37,28 @@ typedef struct id_ip_info{
     int skt2;
 }id_ip_info;
 id_ip_info clientlist[MAX_CONN];
+
+#define TCP_PORT    3333
+typedef struct conn_ip_info{
+int conn_fd;
+char ip[20];
+}conn_ip_info;
+conn_ip_info waitList[MAX_CONN];
+
+
 void debug()
 {
     int i;
+    printf("peer info:\n");
     for(i=0;i<MAX_CONN;i++){
         if(clientlist[i].id != 0){
-            printf("--------\n%d-%s:%d-%s:%d\n",clientlist[i].id,clientlist[i].ip1,clientlist[i].port1,clientlist[i].ip2,clientlist[i].port2);
+            printf("%d-----%s:%d-%s:%d\n",clientlist[i].id,clientlist[i].ip1,clientlist[i].port1,clientlist[i].ip2,clientlist[i].port2);
         }
     }
 }
 static int updateConn(char* ip,int port,int handle)
 {
-    int i;
+    int i,k;
     char buff[100];
     for(i=0;i<MAX_CONN;i++){
         if(clientlist[i].id == handle)break;
@@ -51,6 +66,7 @@ static int updateConn(char* ip,int port,int handle)
     if(i != MAX_CONN){//already exist
         if(strcmp(clientlist[i].ip1,ip) == 0){
             clientlist[i].port1 = port;
+
             debug();
         }else{
             clientlist[i].port2 = port;
@@ -58,11 +74,21 @@ static int updateConn(char* ip,int port,int handle)
             send(clientlist[i].skt1,buff,strlen(buff),0);
             sprintf(buff,"%s:%d",clientlist[i].ip1,clientlist[i].port1);
             send(clientlist[i].skt2,buff,strlen(buff),0);
+            //得到锁
+            pthread_mutex_lock(&mutex);
+            for(k=0;k<MAX_CONN;k++){
+                if(waitList[k].conn_fd != clientlist[i].skt1 || waitList[k].conn_fd != clientlist[i].skt2){
+                    waitList[k].conn_fd = 0;
+                }
+            }
+            //释放锁
+            pthread_mutex_unlock(&mutex);
             close(clientlist[i].skt1);
             close(clientlist[i].skt2);
             debug();
             memset(&clientlist[i],0,sizeof(id_ip_info));
             printf("close one\n");
+            debug();
         }
     }
     return -1;
@@ -120,12 +146,6 @@ void udp_server()
     close(sockfd);
 }
 //这个线程用来做信令的
-#define TCP_PORT    3333
-typedef struct conn_ip_info{
-int conn_fd;
-char ip[20];
-}conn_ip_info;
-conn_ip_info waitList[MAX_CONN];
 
 int create_skt()
 {
@@ -159,6 +179,7 @@ int create_skt()
         return -1;
     }
    memset(&waitList,0,sizeof(conn_ip_info)*MAX_CONN);
+   pthread_mutex_init(&mutex,NULL);
    return socket_fd;
 }
 
@@ -189,6 +210,7 @@ void tcp_server()
     int recvSize;
     char buff[100];
     while(1){
+        pthread_mutex_lock(&mutex);
         maxFd = -1;
         cnt = 0;
         tv.tv_sec = 0;
@@ -216,6 +238,7 @@ void tcp_server()
                 }
             }
         }
+        pthread_mutex_unlock(&mutex);
     }
 }
 
