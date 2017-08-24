@@ -108,7 +108,7 @@ int main(int argc,char* argv[])
     addr.sin_port = htons(target_port);
     addr.sin_addr.s_addr = inet_addr(target_ip);
     len = sizeof(addr);
-    printf("target:%s:%d\n",target_ip,target_port);
+    printf("target:%s:%d handle=%d\n",target_ip,target_port,sockfd);
 
     pthread_t pid;
     pthread_create(&pid,NULL,recv_thread,&sockfd);
